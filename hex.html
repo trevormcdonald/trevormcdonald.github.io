@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<html lang="en">
+<head>
+<title>Hex Music</title>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/d3-hexbin.v0.2.min.js"></script>
+<script src="./tonal.min.js"></script>
+<script src="https://tonejs.github.io/build/Tone.min.js"></script>
+<style>
+svg {
+  border: solid #ccc 1px;
+  margin: auto;
+}
+</style>
+</head>
+<body>
+<div id="plot" style="text-align:center;">
+</div>
+
+</body>
+<script>
+var height = 400;
+var width = 600;
+var svg = d3.select("#plot").append("svg")
+  .attr("height", height).attr("width", width);
+
+var hexbin = d3.hexbin().size([1,1]).radius(20);
+//make the points for a uniform hex grid
+var pts = [];
+for (var i = 0; i <= width; i+=30){
+  for (var j=0; j<= height; j+=30){
+    pts.push([(i), (j)])
+  }
+}
+//https://stackoverflow.com/questions/50029490/in-d3-hexbin-increase-radius-of-multiple-hexagons-with-mouseover
+
+function unique(arr) {
+    var u = {}, a = [];
+    for(var i = 0, l = arr.length; i < l; ++i){
+        if(!u.hasOwnProperty(arr[i])) {
+            a.push(arr[i]);
+            u[arr[i]] = 1;
+        }
+    }
+    return a;
+}
+
+var xs = unique(hexbin(pts).map(h => parseFloat(h.x))).sort(function(a,b) { return a - b;});
+var ys = unique(hexbin(pts).map(h => parseFloat(h.y))).sort(function(a,b) { return a - b;});
+
+
+var rowStarts = new Array(14).fill("F1");
+rowStarts.forEach(function(p, i){
+  if (i){
+    var prev = rowStarts[i-1];
+
+    rowStarts[i] =  Tonal.Distance.transpose(prev, i % 2 ? "3M" : Tonal.Interval.invert('3m'));
+  }
+});
+//
+function trFifths(pitch, fifths){
+  var p = pitch;
+  for(var i=0; i<fifths; i++){
+    p = Tonal.Distance.transpose(p, "P5")
+  }
+  return Tonal.Note.simplify(p);
+}
+
+//our instrument
+var synth = new Tone.Synth().toMaster();
+//populate our svg with hexagons
+svg.selectAll("path")
+    .data(hexbin(pts))
+    .enter().append("path")
+    .attr("d", hexbin.hexagon())
+    .attr("id", d => xs.indexOf(d.x) + "-" + ys.indexOf(d.y))
+    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+    .attr("stroke", "#00cc11")
+    .attr("stroke-width", "4px")
+    .style("fill", function (d) {
+      return "#add8e6";
+    })
+    .style("fill-opacity", "1.0")
+    .on("mouseenter", function(d) {
+
+      d3.select(this).style("fill-opacity", "0.5");
+      //play midi for the note
+      var dx = xs.indexOf(d.x);
+      var dy = ys.indexOf(d.y);
+      console.log(dx + "-" + dy);
+      //dy is the row number, 0 to 13
+      //floor(dx/2) is the column number
+      var pitch = trFifths(rowStarts[dy], Math.floor(dx/2));
+      if(Tonal.Note.props(pitch).oct > 8){
+        //only the dog can hear above that
+        pitch = Tonal.Note.props(pitch).pc + "" + (Tonal.Note.props(pitch).oct - 8)
+      }
+      console.log(pitch);
+      synth.triggerAttackRelease(Tonal.Note.simplify(pitch), "8n");
+      console.log("played");
+    })
+    .on("mouseleave", function(d) {
+      d3.select(this).style("fill-opacity", "1.0");
+    })
+
+
+
+</script>
+</html>
