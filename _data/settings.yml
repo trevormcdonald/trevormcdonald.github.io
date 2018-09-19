@@ -3,7 +3,7 @@ disqus:
   comments: false
   disqus_shortname: 'https-the-balanced-party'
 
-google-ID: 'UA-112060364-1'
+
 
 menu:
 - {name: 'About', path: 'menu', url: 'about.html'}
