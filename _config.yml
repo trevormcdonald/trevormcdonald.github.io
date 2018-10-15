@@ -24,6 +24,12 @@ title:		           'The Balanced Party'
 description:	       'a 5e d&d podcast with all the player it needs'
 author:              'Mari & Trevor'
 
+
+defaults:
+  - scope:
+      path: "assets/pod"
+    values:
+      podcast: true
 # RSS 2.0 can be used instead of Atom by uncommenting following two lines
-#feed:
-#  path: rss-feed.xml
+feed:
+  path: rss-feed.xml
