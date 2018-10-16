@@ -22,7 +22,7 @@
 							<description>{{ post.content | xml_escape }}</description>
 						{% endif %}
 						<pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
-						<enclosure url="{{ site.github.url }}/assets/pod/{{post.audio}}" type="audio/mpeg" length="{{file[0].length}}" />
+						<enclosure url="{{ site.github.url }}/assets/pod/{{post.audio}}" type="audio/mpeg" length="{{files[0].length}}" />
 						<link>{{ site.url }}{{ post.url }}</link>
 						<guid isPermaLink="true">{{ site.url }}{{ post.url }}</guid>
 					</item>
