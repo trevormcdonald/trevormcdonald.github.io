@@ -10,6 +10,7 @@
 		{% for category in site.categories %}
 			{% if category[0] == "podcast" %}
 				{% for post in category[1] %}
+					{% assign files = site.data.pods | where: "name", post.audio %}
 					<item>
 						<title>{{ post.title | xml_escape }}</title>
 						{% if post.author %}
@@ -21,7 +22,7 @@
 							<description>{{ post.content | xml_escape }}</description>
 						{% endif %}
 						<pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
-						<enclosure url="{{ site.github.url }}/{{post.audio}}" type="audio/mpeg" length="1" />
+						<enclosure url="{{ site.github.url }}/assets/pod/{{post.audio}}" type="audio/mpeg" length="{{file[0].length}}" />
 						<link>{{ site.url }}{{ post.url }}</link>
 						<guid isPermaLink="true">{{ site.url }}{{ post.url }}</guid>
 					</item>
