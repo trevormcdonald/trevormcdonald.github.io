@@ -4,8 +4,10 @@ This site is made by the Lagrange framework for Jekyll found [here](https://gith
 
 To upload a new episode, follow these steps:
 
-1.  Put the audio file in `/assets/pod/`
-2.  Create a new file in `_posts`
+1.  Put the audio file in `/assets/pod/`.
+2.  Create a new file in `_posts`.
 3.  Set the title as the name of the episode.
 4.  Set the categories to `podcast`.
-5.  Set audio to `filename.mp3`
+5.  Set audio to `filename.mp3`.
+6.  Run `python meta.py` to save the audio metadata to `_data`.
+7.  Push.

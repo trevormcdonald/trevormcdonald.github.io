@@ -1,5 +1,6 @@
 #!/usr/bin/python
-
+#Go through the podcast directory and create a data csv file with metadata
+#So far, only file length is saved
 import os, csv
 
 lengths = {}
