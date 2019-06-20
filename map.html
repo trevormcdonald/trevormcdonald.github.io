@@ -1,0 +1,205 @@
+<!DOCTYPE html> <meta charset="utf-8" />
+<style>
+  /* CSS goes here. */
+  svg {
+    border: 1px solid black;
+  }
+
+  .name {
+    font-size: 9px;
+  }
+  .comment {
+    font-size: 9px;
+  }
+  .legend {
+    font-size: 12px;
+  }
+</style>
+<body>
+  <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
+  <script>
+    //taken from https://bl.ocks.org/mbostock/7555321
+    //for wrapping text
+    function wrap(text, width) {
+      text.each(function() {
+        var text = d3.select(this),
+          words = text
+            .text()
+            .split(/\s+/)
+            .reverse(),
+          word,
+          line = [],
+          lineNumber = 0,
+          lineHeight = 0.7, // ems
+          y = text.attr("y"),
+          dy = parseFloat(text.attr("dy")),
+          tspan = text
+            .text(null)
+            .append("tspan")
+            .attr("x", 0)
+            .attr("y", y)
+            .attr("dy", dy + "em");
+        while ((word = words.pop())) {
+          line.push(word);
+          tspan.text(line.join(" "));
+          if (tspan.node().getComputedTextLength() > width) {
+            line.pop();
+            tspan.text(line.join(" "));
+            line = [word];
+            tspan = text
+              .append("tspan")
+              .attr("x", 0)
+              .attr("y", y)
+              .attr("dx", "-20px")
+              .attr("dy", ++lineNumber * lineHeight + dy + "em")
+              .text(word);
+          }
+        }
+      });
+    }
+    //create the svg
+    var width = 960,
+      height = 1160;
+
+    var svg = d3
+      .select("body")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .style("background", "#eee");
+
+    //add a title at the bottom
+    svg
+      .append("text")
+      .attr("x", width / 2)
+      .attr("y", height - 65)
+      .attr("text-anchor", "middle")
+      .text("Online Comments on Minneapolis 2040 (9/28 - 12/7)");
+
+    var features = null;
+
+    //load the data
+    Promise.all([
+      d3.json("./out/locations.json"),
+      d3.json("minneapolis.json")
+    ]).then(function(files) {
+      let locations = files[0]; //list of addresses with latLng data
+      let neighborhoods = files[1]; //TopoJSON objects for neighborhoods
+      console.log(locations);
+      console.log(neighborhoods);
+      //use d3.geoContains to find how many comments came from each neighborhood
+      features = topojson
+        .feature(neighborhoods, neighborhoods.objects.minneapolis)
+        .features.map(feature => {
+          let num_comments = locations.filter(l =>
+            d3.geoContains(feature.geometry, [l.location.lng, l.location.lat])
+          ).length;
+          return { ...feature, comments: num_comments };
+        });
+
+      let total_comments = features
+        .map(f => f.comments)
+        .reduce((a, b) => a + b);
+      let max_comments = Math.max(...features.map(f => f.comments));
+
+      console.log("Total comments: ", total_comments);
+      console.log("Max comments: ", max_comments);
+      //create the color scale
+      let blue = d3
+        .scaleSequential(d3.interpolateBlues)
+        .domain([0, max_comments]);
+      //center our map projection on Minneapolis
+      var projection = d3
+        .geoAlbers()
+        .scale(350000)
+        .rotate([93.26667, 0])
+        .center([0, 44.96])
+        .translate([width / 2, height / 2]);
+      var path = d3.geoPath().projection(projection);
+
+      console.log(features);
+      //data join for appending neighborhoods
+      svg
+        .selectAll(".neighborhood")
+        .data(features)
+        .enter()
+        .append("path")
+        .attr("class", function(d) {
+          return "neighborhood";
+        })
+        .attr("d", path)
+        .style("fill", function(d) {
+          return blue(d.comments);
+        })
+        .style("stroke", "black")
+        .on("mouseover", function(d) {
+          d3.select(this.parentNode)
+            .append("text")
+            .attr("transform", function() {
+              return "translate(" + path.centroid(d.geometry) + ")";
+            })
+            .attr("dx", "-20px")
+            .attr("dy", "30px")
+            .attr("class", "comment")
+            .text(function() {
+              return d.comments;
+            })
+            .style("fill", function() {
+              return d.comments > 30 ? "white" : "black";
+            });
+        })
+        .on("mouseout", function(d) {
+          d3.select(this.parentNode)
+            .selectAll(".comment")
+            .remove();
+        });
+      //data join for appending neighborhood names
+      svg
+        .selectAll(".name")
+        .data(features)
+        .enter()
+        .append("text")
+        .attr("class", "name")
+        .attr("transform", function(d) {
+          return "translate(" + path.centroid(d.geometry) + ")";
+        })
+        .attr("dx", "-20px")
+        .attr("dy", "0px")
+        .text(function(d) {
+          return d.properties.name;
+        })
+        .call(wrap, 20)
+        .style("fill", function(d) {
+          return d.comments > 30 ? "white" : "black";
+        });
+      //add the legend in the bottom left
+      let legend = svg
+        .selectAll(".legend")
+        .data([0, max_comments / 2 + 0.5, max_comments])
+        .enter()
+        .append("g")
+        .attr("class", "legend")
+        .attr("transform", function(d, i) {
+          return (
+            "translate(" + (width - 150) + "," + (height - 50 - 25 * i) + ")"
+          );
+        });
+      legend
+        .append("rect")
+        .attr("width", 10)
+        .attr("height", 10)
+        .style("fill", blue)
+        .style("stroke", "black");
+      legend
+        .append("text")
+        .attr("x", 17)
+        .attr("y", 10)
+        .text(function(d) {
+          return d + " comments";
+        });
+    });
+  </script>
+  Taken from
+  <a href="https://lims.minneapolismn.gov/ClerkFile/CF-2018-00006">here</a>
+</body>
