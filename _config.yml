@@ -20,9 +20,9 @@ permalink:           none
 plugins:             [jekyll-paginate, jekyll-sitemap, jekyll-feed, jekyll-seo-tag]
 
 # Customise atom feed settings (this is where Jekyll-Feed gets configuration information)
-title:		           'The Balanced Party'
-description:	       'a 5e d&d podcast with all the player it needs'
-author:              'Mari & Trevor'
+title:               'Trevor McDonald's Posts'
+description:	       'Trevor McDonald's Posts'
+author:              'Trevor'
 
 
 defaults:
