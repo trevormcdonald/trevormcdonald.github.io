@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<html lang="en">
+<head>
+<title>Hex Music</title>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/d3-hexbin.v0.2.min.js"></script>
+<style>
+svg {
+  border: solid #ccc 1px;
+  margin: auto;
+}
+</style>
+</head>
+<body>
+<div id="plot" style="text-align:center;">
+</div>
+
+</body>
+<script>
+var height = 600;
+var width = 800;
+var imageSize = 200;
+var svg = d3.select("#plot").append("svg")
+  .attr("height", height).attr("width", width);
+// add image def
+var defs = svg.append("svg:defs")
+defs.append("svg:pattern")
+    .attr("id", "shipwreck")
+    .attr("width", imageSize)
+    .attr("height", imageSize)
+    .attr("x", 120)
+    .attr("y", 90)
+    .attr("patternUnits", "userSpaceOnUse")
+    .append("svg:image")
+    .attr("xlink:href", 'https://static.thenounproject.com/png/4481-200.png')
+    .attr("width", imageSize)
+    .attr("height", imageSize)
+    .attr("x", 0)
+    .attr("y", 0);
+// points time
+var hexbin = d3.hexbin().size([1,1]).radius(120);
+//make the points for a uniform hex grid
+var pts = [];
+for (var i = 0; i <= width; i+=30){
+  for (var j=0; j<= height; j+=30){
+    pts.push([(i), (j)])
+  }
+}
+//https://stackoverflow.com/questions/50029490/in-d3-hexbin-increase-radius-of-multiple-hexagons-with-mouseover
+
+function unique(arr) {
+    var u = {}, a = [];
+    for(var i = 0, l = arr.length; i < l; ++i){
+        if(!u.hasOwnProperty(arr[i])) {
+            a.push(arr[i]);
+            u[arr[i]] = 1;
+        }
+    }
+    return a;
+}
+
+var xs = unique(hexbin(pts).map(h => parseFloat(h.x))).sort(function(a,b) { return a - b;});
+var ys = unique(hexbin(pts).map(h => parseFloat(h.y))).sort(function(a,b) { return a - b;});
+
+
+var rowStarts = new Array(14).fill("F1");
+
+//populate our svg with hexagons
+svg.selectAll("path")
+    .data(hexbin(pts))
+    .enter().append("path")
+    .attr("d", hexbin.hexagon())
+    .attr("id", d => xs.indexOf(d.x) + "-" + ys.indexOf(d.y))
+    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+    .attr("stroke", "#000000")
+    .attr("stroke-width", "4px")
+    .style("fill", function (d) {
+        var dx = xs.indexOf(d.x);
+        var dy = ys.indexOf(d.y);
+        if (dx == 4 && dy == 2) {
+            // shipwreck
+            return "url(#shipwreck)"
+        }
+        if (dx == 2 && dy == 2) {
+            // left, hill
+            return "#8bc34a"
+        }
+        if (dx == 3 && dy == 1) {
+            // top, forest
+            return "#194d33"
+        }
+        if (dx == 5 && dy == 1) {
+            // right, grass
+            return "#cddc39"
+        }
+        if (dx + dy > 6 || (dy == 3) ) {
+            return "#0d47a1"
+        }
+      return "#666666";
+    })
+    .style("fill-opacity", "1.0")
+    .on("mouseenter", function(d) {
+
+      d3.select(this).style("fill-opacity", "0.5");
+      //play midi for the note
+      var dx = xs.indexOf(d.x);
+      var dy = ys.indexOf(d.y);
+      console.log(dx + "-" + dy);
+      //dy is the row number, 0 to 13
+      //floor(dx/2) is the column number
+      // var pitch = trFifths(rowStarts[dy], Math.floor(dx/2));
+    })
+    .on("mouseleave", function(d) {
+      d3.select(this).style("fill-opacity", "1.0");
+    })
+
+
+
+</script>
+</html>
